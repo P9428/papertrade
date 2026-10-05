@@ -4,46 +4,88 @@ PAPER is venue-side equity: a claim on the house's take. The play is to own it a
 
 ## Thesis
 
-Trading at mid with no fee, spread or funding, a no-edge trader's expected cost is only the haircut on wins, while every losing close mints PAPER. With symmetric outcomes of size W and an ~11% haircut on ≥1% moves:
+PAPER mints on every losing close's gross loss (research/mint-basis.md); winners pay only the asymmetric-impact haircut. Run trades as **matched pairs** — a long and a short of equal size, closed together once price has moved ≥1%. Each pair has one loser and one winner, so the result is deterministic instead of a coin flip:
 
-- expected cost per trade ≈ 0.5·W·0.11 = 0.055W
-- expected mint ≈ 0.5·W·0.98·100 = 49W PAPER (2% loss fee on solvent closes)
-- cost ≈ $0.0011/PAPER, against $0.0102 for deliberate losing
+- loser loses W and mints 0.98·W·rate PAPER (2% loss fee on solvent closes)
+- winner is paid kept·W (kept ≈ 0.886 at a 1% move, unverified)
+- cost per PAPER = (1 − kept) / (0.98 · rate) ≈ $0.00116 at the flat rate, against $0.0102 for losing on purpose
 
-Holds only if minting is on gross realized loss (open question a), targets are ≥1% moves, and winning closes get paid (LP is $0 at launch, so early wins queue).
-
-See CALM-ENGINEER.md: the edge is cost per PAPER, not block-one arrival — patience beats the launch race if (a) is gross loss.
+Arrival time matters less than the crowd thinks: the decay is gentle (`python tracker/ptrack.py curve`). Waiting until the pool is past $5M costs ~$0.00122–0.0015/PAPER and removes the empty-pool queue, launch congestion and day-one contract risk. See CALM-ENGINEER.md.
 
 ## Open questions — answer before committing
 
 | # | Question | If the answer is bad |
 |---|---|---|
 | a | ~~Does PAPER mint on gross realized loss or on net LP growth?~~ **Resolved 2026-10-05: per-close gross loss, 0.98× on solvent closes** (research/mint-basis.md) | — |
-| b | What makes a loss "eligible"? Min hold time, min size, wash detection? | Adjust trade shape to qualify |
+| b | What makes a loss "eligible"? Docs name no hold-time, size or wash rule | Adjust trade shape to qualify |
 | c | Relayer priority weights; minimum notional? | Raise notional at lower leverage |
-| d | Actual haircut parameters | Recompute cost per PAPER |
+| d | Actual haircut parameters | Measured in phase 2; widen to ±2% if kept < 0.80 |
 | e | Is the frontend open to US users? | Stop |
 | f | Phase 4 transfer timing | Sets how long capital is locked |
 
 Channels: docs, Discord, @izebel_eth (answering questions in person at the Hyperliquid event 2026-10-05).
 
-## Steps
+## Phased run
 
-1. **By 10-07** — answer a–f. Set the burn budget: money that can go to zero with no exit date.
-2. **By 10-07** — fresh wallet; USDC to HyperEVM plus HYPE for gas. Type `papertrade.xyz` directly; never follow links.
-3. **10-08** — predeposit the full budget through the official frontend.
-4. **10-10** — BTC/ETH, 5–20x, symmetric profit-target/stop brackets of about ±1–2%. No 1000x, no sub-0.05% scalps. Notional large enough to clear the relayer queue, within budget.
-5. Stake every PAPER as it mints.
-6. Track LP on-chain. Past $2M the rate decays; stop when realized cost/PAPER exceeds a third of the conservative one-year yield estimate. Stop at the burn budget regardless of results.
-7. Weekly: staker USDC paid ÷ supply → yield on cost. Bull ≈ $50M/yr over 2–5B supply; bear ≈ $5M/yr.
-8. Phase 4: hold for yield or sell to late arrivals.
+Example sizing: $2,000 burn budget. Scale every number to the real budget.
+
+### Phase 0 — setup, no money in (by 10-07)
+
+1. Set the burn budget: money that can go to zero with no exit date.
+2. Answer e (US access). If blocked, stop here.
+3. Fresh wallet with USDC on Hyperliquid; the relayer pays gas. Type `papertrade.xyz` directly; never follow links.
+4. **No predeposit.** Not trading on day one means no reason to hold funds in a brand-new contract.
+
+### Phase 1 — watch (10-08 to about 10-20)
+
+5. 10-08, once predeposit opens: `python tracker/ptrack.py deploy wayback:https://papertrade.xyz/ --wallet <your wallet>` (or a saved page if the trade route carries the tag; see tracker/README.md). Then `python tracker/ptrack.py watch --every 120`.
+6. Let the crowd race; their 1000x liquidations fill the pool.
+7. **Entry trigger — the tracker prints GO when all hold:** pool ≥ $5M, queue empty, nothing paused, no contract implementation changed since first seen. Sumcap puts the pool at $5M in ~5–14 days.
+
+### Phase 2 — test (one day)
+
+8. Deposit $200. Run 5 pairs at $100 margin per leg, 10x ($1,000 notional each side).
+9. For each pair check:
+   - PAPER minted = 0.98 × loss × current rate. If not, stop.
+   - kept = winner payout ÷ raw gain. If below 0.80, widen the close trigger to ±2%. Re-run `ptrack.py curve --kept <measured>`.
+
+### Phase 3 — farm (about 3–4 weeks)
+
+10. Working capital: $1,000 margin per leg, 10x, $10k notional each side.
+11. Cycle: open long + short together → wait for a ≥1% move in either direction → close both → stake the minted PAPER immediately → reopen. BTC and ETH both, about 4–10 cycles a day.
+12. Per cycle at a 1% move: loser −$100, mints ~9,800 PAPER at the flat rate (fewer as the pool grows); winner +~$88.60; net cost ~$11.40.
+13. $2,000 ÷ $11.40 ≈ 175 cycles → ~1.5–1.7M PAPER, depending on rate decay.
+14. Stay at 10x: the bust price is ~9.95% away, so a 1% close never nears it. More leverage buys nothing here.
+15. Log every cycle (open/close prices, loss, payout, PAPER minted) — the realized cost per PAPER is the number that matters.
+
+### Phase 4 — run as the house
+
+16. Weekly: claim staked USDC; yield on cost = USDC/yr ÷ (PAPER × cost per PAPER).
+17. Bull ≈ $50M/yr to stakers over 2–5B supply; bear ≈ $5M/yr.
+
+### Phase 5 — endgame
+
+18. When PAPER transfers open (no date), hold the yield or sell to buyers who paid ≥1¢.
+
+## Stop rules
+
+| Trigger | Action |
+|---|---|
+| Minted PAPER ≠ formula | Stop |
+| Winning leg queued > 24h (tracker STOP) | Pause until cleared |
+| Realized cost > $0.004/PAPER over 50 cycles | Stop, re-plan |
+| Staker USDC in weeks 1–2 annualizes < 3× cost | Stop farming, hold staked PAPER |
+| Exploit, pause, contract upgrade, or mint/haircut parameter change (tracker STOP) | Withdraw undeployed funds |
+| Burn budget spent | Stop. No top-ups. |
 
 Skip PaperDAO / $PULP: founder-disavowed, opaque treasury, and its pooled-size edge is available solo.
+
+## Risks specific to pairs
+
+- Pairs are allowed by the docs as written, but they are deliberate loss farming. The owner controls haircut parameters and can upgrade the contracts behind a timelock — the tracker's implementation check is the tripwire.
+- Phase 1 of launch is frontend-only, so cycles are manual clicks; scripting waits for the open-contract phase.
+- If volume never arrives, cheap PAPER earns little.
 
 ## Forecast
 
 The flat zone (LP < $2M) is exhausted within the first day of live trading — P = 0.60. Resolves on the LP balance at 2026-10-11 00:00 UTC.
-
-## Next build
-
-Once the contract address is public: LP and cost-per-PAPER tracker feeding the foresight board.
