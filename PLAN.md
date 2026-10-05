@@ -12,6 +12,8 @@ Trading at mid with no fee, spread or funding, a no-edge trader's expected cost 
 
 Holds only if minting is on gross realized loss (open question a), targets are ≥1% moves, and winning closes get paid (LP is $0 at launch, so early wins queue).
 
+See CALM-ENGINEER.md: the edge is cost per PAPER, not block-one arrival — patience beats the launch race if (a) is gross loss.
+
 ## Open questions — answer before committing
 
 | # | Question | If the answer is bad |
