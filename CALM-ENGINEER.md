@@ -52,6 +52,8 @@ Consequence: the launch-day race is not the hill. Farming patiently for weeks at
 
 ## 5. Binding constraint
 
+**Resolved 2026-10-05: mint basis is per-close gross loss (research/mint-basis.md). Reframe A holds. New binding constraint: the unpublished haircut parameters, which set the real cost per PAPER — measure them with the 20 test closes.**
+
 **Whether PAPER mints on gross realized loss or on net LP growth.** If gross, reframe A works and patience beats the race. If net, every PAPER costs about 1¢ no matter how you trade, and only budget size and timing matter.
 
 ## 6. Counterparty orientation

@@ -7,8 +7,8 @@ PAPER is venue-side equity: a claim on the house's take. The play is to own it a
 Trading at mid with no fee, spread or funding, a no-edge trader's expected cost is only the haircut on wins, while every losing close mints PAPER. With symmetric outcomes of size W and an ~11% haircut on ≥1% moves:
 
 - expected cost per trade ≈ 0.5·W·0.11 = 0.055W
-- expected mint ≈ 0.5·W·100 = 50W PAPER
-- cost ≈ $0.0011/PAPER, against $0.01 for deliberate losing
+- expected mint ≈ 0.5·W·0.98·100 = 49W PAPER (2% loss fee on solvent closes)
+- cost ≈ $0.0011/PAPER, against $0.0102 for deliberate losing
 
 Holds only if minting is on gross realized loss (open question a), targets are ≥1% moves, and winning closes get paid (LP is $0 at launch, so early wins queue).
 
@@ -18,7 +18,7 @@ See CALM-ENGINEER.md: the edge is cost per PAPER, not block-one arrival — pati
 
 | # | Question | If the answer is bad |
 |---|---|---|
-| a | Does PAPER mint on gross realized loss or on net LP growth? | Cost reverts to 1¢/PAPER; only budget size matters |
+| a | ~~Does PAPER mint on gross realized loss or on net LP growth?~~ **Resolved 2026-10-05: per-close gross loss, 0.98× on solvent closes** (research/mint-basis.md) | — |
 | b | What makes a loss "eligible"? Min hold time, min size, wash detection? | Adjust trade shape to qualify |
 | c | Relayer priority weights; minimum notional? | Raise notional at lower leverage |
 | d | Actual haircut parameters | Recompute cost per PAPER |
